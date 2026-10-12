@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+
+  <title>دستیار هوشمند برنامه‌نویسی و سرور</title>
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+
+      <div class="logo">
+        🤖
+      </div>
+
+      <div class="header-info">
+        <h1>دستیار هوشمند برنامه‌نویسی و سرور</h1>
+
+        <div class="status">
+          <span class="online"></span>
+          آنلاین و آماده پاسخگویی
+        </div>
+      </div>
+
+      <a
+        class="call-button"
+        href="tel:09100630762"
+      >
+        📞 تماس
+      </a>
+
+    </header>
+
+
+    <!-- Quick buttons -->
+    <div class="quick-actions">
+
+      <button onclick="quickMessage('طراحی سایت می‌خواهم')">
+        🌐 طراحی سایت
+      </button>
+
+      <button onclick="quickMessage('برنامه‌نویسی می‌خواهم')">
+        💻 برنامه‌نویسی
+      </button>
+
+      <button onclick="quickMessage('VPS و سرور می‌خواهم')">
+        🖥️ VPS
+      </button>
+
+      <button onclick="quickMessage('خدمات هوش مصنوعی')">
+        🤖 هوش مصنوعی
+      </button>
+
+      <button onclick="quickMessage('قیمت خدمات چقدر است؟')">
+        💰 قیمت
+      </button>
+
+      <button onclick="quickMessage('می‌خواهم سفارش بدهم')">
+        📋 سفارش
+      </button>
+<button onclick="quickMessage('بازی‌های وبسایتی')">
+  🎮 بازی‌ها
+</button>
+<button onclick="quickMessage('سرور و تجهیزات شبکه')">
+  🖥️ سرور
+</button>    </div>
+
+
+    <!-- Chat -->
+    <main
+      class="chat"
+      id="chat"
+    >
+
+      <div class="message bot">
+
+        <div class="bubble">
+
+          سلام 👋
+
+          به دستیار هوشمند برنامه‌نویسی و سرور خوش آمدید.
+
+          من می‌توانم درباره:
+
+          🌐 طراحی سایت
+          💻 برنامه‌نویسی
+          🖥️ VPS و سرور
+          🤖 هوش مصنوعی
+          💰 قیمت خدمات
+          📋 ثبت سفارش
+
+          راهنمایی‌تان کنم.
+
+          می‌توانید پیام متنی بفرستید یا از 🎤 دکمه ویس استفاده کنید.
+
+        </div>
+
+      </div>
+
+
+      <!-- Typing -->
+      <div
+        class="message typing"
+        id="typing"
+      >
+
+        <div class="bubble">
+          در حال پاسخگویی...
+        </div>
+
+      </div>
+
+    </main>
+
+
+    <!-- Input -->
+    <div class="input-area">
+
+      <div class="input-box">
+
+        <!-- Voice -->
+        <button
+          id="voiceButton"
+          class="voice-button"
+          onclick="toggleRecording()"
+          title="ضبط صدا"
+        >
+          🎤
+        </button>
+
+
+        <!-- Text -->
+        <input
+          id="messageInput"
+          type="text"
+          placeholder="پیام خود را بنویسید..."
+          autocomplete="off"
+        >
+
+
+        <!-- Send -->
+        <button
+          id="sendButton"
+          class="send-button"
+          onclick="sendMessage()"
+        >
+          ➤
+        </button>
+
+      </div>
+
+
+      <div
+        id="recordingStatus"
+        class="recording-status"
+      >
+        برای ارسال ویس روی 🎤 بزنید
+      </div>
+
+
+      <div class="footer">
+
+        پشتیبانی و سفارش:
+
+        <a href="tel:09100630762">
+          09100630762
+        </a>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- JavaScript -->
+
+<script src="/app.js"></script>
+
+<script src="/audio/recorder.js"></script>
+
+<script src="/games.js"></script>
+<script src="/servers.js"></script>
+</body>
+</html>
