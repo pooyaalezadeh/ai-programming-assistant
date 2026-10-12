@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Road Rush</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #020617;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .game-wrapper {
+      width: min(100%, 430px);
+      padding: 12px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .score {
+      background: #1e293b;
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
+
+    canvas {
+      width: 100%;
+      display: block;
+      border-radius: 18px;
+      background: #111827;
+      border: 2px solid #334155;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .controls button {
+      flex: 1;
+      border: none;
+      border-radius: 14px;
+      padding: 15px;
+      background: #2563eb;
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .controls button:active {
+      transform: scale(.96);
+    }
+
+    .start {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px;
+      border: none;
+      border-radius: 13px;
+      background: #16a34a;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="game-wrapper">
+
+  <div class="top">
+    <div class="title">🏎️ Road Rush</div>
+    <div class="score">
+      امتیاز: <span id="score">0</span>
+    </div>
+  </div>
+
+  <canvas id="game" width="400" height="650"></canvas>
+
+  <div class="controls">
+    <button id="left">⬅️</button>
+    <button id="right">➡️</button>
+  </div>
+
+  <button class="start" onclick="startGame()">
+    ▶️ شروع بازی
+  </button>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreElement = document.getElementById("score");
+
+let player;
+let enemy;
+let score = 0;
+let running = false;
+let animation;
+
+const road = {
+  x: 70,
+  width: 260
+};
+
+function resetGame() {
+
+  player = {
+    x: 180,
+    y: 550,
+    width: 40,
+    height: 70,
+    speed: 7
+  };
+
+  enemy = {
+    x: 150,
+    y: -100,
+    width: 40,
+    height: 70,
+    speed: 5
+  };
+
+  score = 0;
+  scoreElement.textContent = score;
+}
+
+
+function drawRoad() {
+
+  ctx.fillStyle = "#166534";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#374151";
+  ctx.fillRect(road.x, 0, road.width, canvas.height);
+
+  ctx.strokeStyle = "#f8fafc";
+  ctx.lineWidth = 5;
+
+  ctx.setLineDash([30, 30]);
+
+  ctx.beginPath();
+  ctx.moveTo(155, 0);
+  ctx.lineTo(155, canvas.height);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(245, 0);
+  ctx.lineTo(245, canvas.height);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+}
+
+
+function drawCar(x, y, color) {
+
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, 40, 70);
+
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(x + 7, y + 10, 26, 20);
+
+  ctx.fillStyle = "#facc15";
+  ctx.fillRect(x + 5, y + 4, 8, 6);
+
+  ctx.fillRect(x + 27, y + 4, 8, 6);
+
+  ctx.fillStyle = "#020617";
+
+  ctx.fillRect(x - 4, y + 12, 5, 16);
+  ctx.fillRect(x + 39, y + 12, 5, 16);
+
+  ctx.fillRect(x - 4, y + 48, 5, 16);
+  ctx.fillRect(x + 39, y + 48, 5, 16);
+}
+
+
+function collision(a, b) {
+
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
+
+function update() {
+
+  if (!running) return;
+
+  enemy.y += enemy.speed;
+
+  if (enemy.y > canvas.height) {
+
+    enemy.y = -100;
+
+    const lanes = [100, 180, 260];
+
+    enemy.x = lanes[Math.floor(Math.random() * lanes.length)];
+
+    enemy.speed += 0.2;
+
+    score++;
+    scoreElement.textContent = score;
+  }
+
+  if (collision(player, enemy)) {
+
+    running = false;
+
+    cancelAnimationFrame(animation);
+
+    alert("💥 بازی تمام شد!\nامتیاز شما: " + score);
+
+    return;
+  }
+
+  draw();
+
+  animation = requestAnimationFrame(update);
+}
+
+
+function draw() {
+
+  drawRoad();
+
+  drawCar(player.x, player.y, "#2563eb");
+
+  drawCar(enemy.x, enemy.y, "#dc2626");
+}
+
+
+function startGame() {
+
+  cancelAnimationFrame(animation);
+
+  resetGame();
+
+  running = true;
+
+  update();
+}
+
+
+function moveLeft() {
+
+  if (!running) return;
+
+  player.x -= player.speed;
+
+  if (player.x < road.x + 10) {
+    player.x = road.x + 10;
+  }
+}
+
+
+function moveRight() {
+
+  if (!running) return;
+
+  player.x += player.speed;
+
+  if (player.x > road.x + road.width - player.width - 10) {
+    player.x = road.x + road.width - player.width - 10;
+  }
+}
+
+
+document.getElementById("left").addEventListener("click", moveLeft);
+document.getElementById("right").addEventListener("click", moveRight);
+
+
+document.addEventListener("keydown", function(event) {
+
+  if (event.key === "ArrowLeft") {
+    moveLeft();
+  }
+
+  if (event.key === "ArrowRight") {
+    moveRight();
+  }
+
+});
+
+
+resetGame();
+draw();
+
+</script>
+
+</body>
+</html>
