@@ -4,9 +4,13 @@ name: Build Android Release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -22,13 +26,23 @@ jobs:
         run: npm ci
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Check Android SDK
+        shell: bash
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [ -z "$SDK" ] || [ ! -d "$SDK" ]; then
+            echo "::error::Android SDK not found on runner."
+            exit 1
+          fi
+          echo "Android SDK found."
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
 
       - name: Create Android project
         run: npx cap add android
@@ -36,33 +50,73 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Decode keystore
+      - name: Decode and validate signing key
+        shell: bash
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          mkdir -p android/app
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release-key.jks
-          test -s android/app/release-key.jks
+          set -euo pipefail
+
+          if [ -z "$KEYSTORE_BASE64" ] || \
+             [ -z "$KEYSTORE_PASSWORD" ] || \
+             [ -z "$KEY_ALIAS" ]; then
+            echo "::error::A required signing secret is missing."
+            exit 1
+          fi
+
+          mkdir -p "$RUNNER_TEMP/android-signing"
+
+          printf '%s' "$KEYSTORE_BASE64" \
+            | sed '/^-----BEGIN CERTIFICATE-----$/d; /^-----END CERTIFICATE-----$/d' \
+            | tr -d '\r\n ' \
+            | base64 --decode \
+            > "$RUNNER_TEMP/android-signing/release-key.jks"
+
+          keytool -list \
+            -keystore "$RUNNER_TEMP/android-signing/release-key.jks" \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" \
+            > /dev/null
+
+          echo "Signing key validated."
 
       - name: Build signed Release APK
+        shell: bash
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
+          set -euo pipefail
+
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/android/app/release-key.jks" \
-            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEYSTORE_PASSWORD"
+
+          ./gradlew --no-daemon assembleRelease \
+            "-Pandroid.injected.signing.store.file=$RUNNER_TEMP/android-signing/release-key.jks" \
+            "-Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD" \
+            "-Pandroid.injected.signing.key.alias=$KEY_ALIAS" \
+            "-Pandroid.injected.signing.key.password=$KEYSTORE_PASSWORD"
 
       - name: Verify APK signature
+        shell: bash
         run: |
+          set -euo pipefail
+
           APK="android/app/build/outputs/apk/release/app-release.apk"
-          test -f "$APK"
-          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
+          test -s "$APK"
+
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" \
+            -type f -name apksigner | sort -V | tail -n 1)
+
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner was not found."
+            exit 1
+          fi
+
           "$APKSIGNER" verify --verbose "$APK"
+          echo "Release APK signature verified."
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
